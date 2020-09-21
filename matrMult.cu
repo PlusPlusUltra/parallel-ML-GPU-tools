@@ -43,7 +43,8 @@ __global__ void add(int n, float **matr1, float **matr2, float **resMatr)
         long row1 = number;
 
         //resMatr[row1][column2] = (matr1[row1][column1] * matr2[row2][column2]) + resMatr[row1][column2];
-        resMatr[row1][column2] = 1 + resMatr[row1][column2];
+        //resMatr[row1][column2] = 1 + resMatr[row1][column2];
+        atomicAdd(&resMatr[row1][column2], matr1[row1][column1] * matr2[row2][column2]);
     }
 }
 
@@ -81,7 +82,7 @@ int main(void)
     // run kernel on 1M elements on the GPU
     // 2nd parameter in triple angle brackets is number of threads in thread block.
     // it has to be a multiple of 32
-    add<<<1, 256>>>(N, matr1, matr2, resMatr, &pos, tests);
+    add<<<1, 256>>>(N, matr1, matr2, resMatr);
 
     // Wait for the GPU to finish before accessing on host
     cudaDeviceSynchronize();
@@ -96,8 +97,15 @@ int main(void)
     // Free memory
     cudaFree(matr1);
     cudaFree(matr2);
-    int sum = 0;
 
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            std::cout << resMatr[i][j] << "\n";
+        }
+    }
+    
     
 
     return 0;
